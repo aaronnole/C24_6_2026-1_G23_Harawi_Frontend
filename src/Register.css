@@ -1,0 +1,240 @@
+/* ===========================
+   Register Page — Layout principal
+   =========================== */
+
+.register-page {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+  position: relative;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ===========================
+   Panel izquierdo
+   =========================== */
+
+.register-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 40px 80px 40px;
+  z-index: 1;
+}
+
+.register-inner {
+  width: 100%;
+  max-width: 440px;
+}
+
+.register-title {
+  font-size: 3rem;
+  font-weight: 400;
+  color: #000000;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+/* ===========================
+   Caja y Formulario
+   =========================== */
+
+.register-box {
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+  padding: 24px 24px 32px 24px;
+  position: relative;
+  background: #ffffff;
+  margin-bottom: 20px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.field-row {
+  display: flex;
+  gap: 16px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.field-group.half {
+  flex: 1;
+}
+
+.field-group label {
+  font-size: 0.8rem;
+  color: #555555;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.field-group input,
+.field-group select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #ffffff;
+  color: #111111;
+  font-family: inherit;
+}
+
+.field-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23333' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  color: #555;
+}
+
+.field-group input:focus,
+.field-group select:focus {
+  border-color: #111111;
+}
+
+.btn-register {
+  background-color: #2b2b2b;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+
+.btn-register:hover {
+  background-color: #111111;
+}
+
+.register-links {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 8px 0;
+}
+
+.register-links a {
+  font-size: 0.82rem;
+  color: #555555;
+  text-decoration: underline;
+}
+
+.register-links a:hover {
+  color: #111111;
+}
+
+.btn-google {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333333;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.btn-google:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #cccccc;
+}
+
+/* ===========================
+   Panel derecho — imagen
+   =========================== */
+
+.register-right {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 40px 40px 40px 20px;
+}
+
+.hero-image {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+/* ===========================
+   Barra decorativa inferior
+   =========================== */
+
+.bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background-color: #8fc4a0;
+  z-index: 0;
+}
+
+/* ===========================
+   Responsive
+   =========================== */
+
+@media (max-width: 768px) {
+  .register-page {
+    flex-direction: column;
+  }
+
+  .register-left {
+    padding: 40px 28px 32px 28px;
+  }
+
+  .register-inner {
+    max-width: 100%;
+  }
+
+  .field-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .register-right {
+    padding: 0 28px 60px 28px;
+  }
+
+  .hero-image {
+    max-width: 100%;
+  }
+
+  .register-title {
+    font-size: 2.2rem;
+  }
+}

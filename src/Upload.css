@@ -1,0 +1,200 @@
+.upload-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding-top: 60px; /* Header space */
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 40px auto;
+  padding: 0 40px;
+}
+
+.upload-status-banner {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.status-icon {
+  color: #333;
+}
+
+.status-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.status-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+}
+
+.progress-bar-container {
+  flex: 1;
+  height: 6px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 400px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4b8ff, #aa3bff);
+  border-radius: 3px;
+}
+
+.status-subtext {
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.pro-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+}
+
+.upgrade-link {
+  color: #333;
+  font-weight: 600;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: -50px;
+  top: 10px;
+}
+
+.upload-content {
+  text-align: left;
+}
+
+.upload-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #111;
+}
+
+.upload-description {
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 40px;
+  line-height: 1.5;
+}
+
+.upload-description a {
+  color: #333;
+  text-decoration: underline;
+}
+
+.drop-zone {
+  border: 2px solid #333;
+  border-radius: 8px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+
+.drop-zone:hover {
+  background-color: #f9f9f9;
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.upload-main-icon {
+  color: #333;
+}
+
+.drop-text {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Responsividad */
+@media (max-width: 1300px) {
+  .close-btn {
+    position: static;
+  }
+  .status-right {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .upload-status-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .status-progress-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .progress-bar-container {
+    width: 100%;
+  }
+}
+
+.nav-arrow-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 60px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  transition: transform 0.2s;
+}
+
+.nav-arrow-btn:hover {
+  transform: scale(1.1);
+}

@@ -1,0 +1,152 @@
+.onboarding-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+  position: relative;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  align-items: center;
+  padding-bottom: 60px;
+}
+
+.onboarding-content {
+  width: 100%;
+  max-width: 1000px;
+  padding: 60px 40px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.onboarding-header {
+  margin-bottom: 40px;
+}
+
+.onboarding-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111111;
+  margin: 0 0 8px 0;
+}
+
+.onboarding-subtitle {
+  font-size: 1rem;
+  color: #666666;
+  margin: 0;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.role-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #cccccc;
+}
+
+.role-card.selected {
+  border-color: #111111;
+  box-shadow: 0 0 0 2px #111111, 0 8px 16px rgba(0, 0, 0, 0.08);
+  background-color: #fbfbfb;
+}
+
+.role-icon-container {
+  height: 64px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.role-icon {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  /* Placeholder background incase image is missing */
+  background-color: transparent;
+}
+
+.role-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111111;
+  margin: 0 0 12px 0;
+}
+
+.role-description {
+  font-size: 0.9rem;
+  color: #777777;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.bottom-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 40px;
+  margin-bottom: 50px;
+  z-index: 1;
+}
+
+.btn-next {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-next:hover {
+  background: #111111;
+  color: #ffffff;
+}
+
+/* ===========================
+   Barra decorativa inferior
+   =========================== */
+
+.bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background-color: #8fc4a0;
+  z-index: 0;
+}
+
+@media (max-width: 768px) {
+  .onboarding-content {
+    padding: 40px 24px 20px 24px;
+  }
+  .bottom-actions {
+    padding: 0 24px;
+  }
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+}
