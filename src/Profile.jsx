@@ -83,6 +83,7 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
+  const [isDeletingProjectId, setIsDeletingProjectId] = useState(null);
   const [followState, setFollowState] = useState({
     isFollowing: false,
     isSelf: false,
@@ -105,6 +106,11 @@ export default function Profile() {
   const getImagePath = (name) => {
     const path = `./assets/${name}`;
     return imageAssets[path] || path;
+  };
+
+  const getInitials = (username) => {
+    if (!username) return "U";
+    return String(username).trim().charAt(0).toUpperCase() || "U";
   };
 
   const truncateDescription = (text) => {
@@ -266,6 +272,39 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteProject = async (projectId) => {
+    if (!currentUser?.user_id || !isOwnProfile) return;
+
+    const confirmed = window.confirm("¿Seguro que quieres eliminar esta publicación? Podrás recuperarla solo desde la base de datos.");
+    if (!confirmed) return;
+
+    setIsDeletingProjectId(projectId);
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/projects/${projectId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: currentUser.user_id }),
+      });
+
+      if (!response.ok) {
+        let message = "No se pudo eliminar la publicación.";
+        try {
+          const errorData = await response.json();
+          message = errorData?.message || message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      setProjects((prev) => prev.filter((project) => project.project_id !== projectId));
+    } catch (error) {
+      console.error("Error eliminando proyecto:", error);
+      alert(error.message || "No se pudo eliminar la publicación.");
+    } finally {
+      setIsDeletingProjectId(null);
+    }
+  };
+
   const handleProfilePictureClick = () => {
     if (isOwnProfile && user && !isUploading) {
       fileInputRef.current?.click();
@@ -392,11 +431,15 @@ export default function Profile() {
             className={`profile-banner ${isOwnProfile && user && !isUploadingCover ? "uploadable" : ""}`}
             onClick={handleCoverClick}
           >
-            <img
-              src={user?.cover_picture_url ? `http://localhost:3001${user.cover_picture_url}` : getImagePath("banner1mcdonalds.png")}
-              alt="Banner"
-              className={`banner-img ${isUploadingCover ? "uploading" : ""}`}
-            />
+            {user?.cover_picture_url ? (
+              <img
+                src={`http://localhost:3001${user.cover_picture_url}`}
+                alt="Banner"
+                className={`banner-img ${isUploadingCover ? "uploading" : ""}`}
+              />
+            ) : (
+              <div className={`banner-fallback ${isUploadingCover ? "uploading" : ""}`} aria-label="Sin portada seleccionada" />
+            )}
             {isOwnProfile && user && !isUploadingCover && (
               <div className="profile-banner-overlay">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -422,11 +465,17 @@ export default function Profile() {
               className={`profile-picture-container ${isOwnProfile && user && !isUploading ? "uploadable" : ""}`}
               onClick={handleProfilePictureClick}
             >
-              <img
-                src={user?.profile_picture_url ? `http://localhost:3001${user.profile_picture_url}` : getImagePath("gatoportada.jpg")}
-                alt="Profile"
-                className={`profile-picture ${isUploading ? "uploading" : ""}`}
-              />
+              {user?.profile_picture_url ? (
+                <img
+                  src={`http://localhost:3001${user.profile_picture_url}`}
+                  alt="Profile"
+                  className={`profile-picture ${isUploading ? "uploading" : ""}`}
+                />
+              ) : (
+                <div className={`profile-picture-fallback ${isUploading ? "uploading" : ""}`}>
+                  {getInitials(user?.username)}
+                </div>
+              )}
               {isOwnProfile && user && !isUploading && (
                 <div className="profile-picture-overlay">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -492,62 +541,81 @@ export default function Profile() {
         </div>
 
         <div className="tracks-list">
-          {projects.map((project) => (
-            <div key={project.project_id} className="track-item-container">
-              <div className="track-cover" onClick={() => goToVideo(project.project_id)} style={{ cursor: "pointer" }}>
-                <img
-                  src={project.thumbnail_url ? `http://localhost:3001${project.thumbnail_url}` : getImagePath("gatoportada.jpg")}
-                  alt="Cover"
-                />
-              </div>
+          {projects.length === 0 ? (
+            <div className="profile-empty-state">
+              <h3 className="profile-empty-title">Todavia no hay publicaciones</h3>
+              <p className="profile-empty-text">
+                Cuando este usuario suba su primer archivo, aparecerá aqui para que puedas explorarlo.
+              </p>
+            </div>
+          ) : (
+            projects.map((project) => (
+              <div key={project.project_id} className="track-item-container">
+                <div className="track-cover" onClick={() => goToVideo(project.project_id)} style={{ cursor: "pointer" }}>
+                  <img
+                    src={project.thumbnail_url ? `http://localhost:3001${project.thumbnail_url}` : getImagePath("gatoportada.jpg")}
+                    alt="Cover"
+                  />
+                </div>
 
-              <div className="track-content">
-                <div className="track-info-row">
-                  <div className="track-info">
-                    <button className="play-btn" onClick={() => goToVideo(project.project_id)}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                    </button>
-                    <div className="track-text">
-                      <span className="track-author">{user ? user.username : "username"}</span>
-                      <span className="track-title">{project.title}</span>
-                      <span className="track-desc">{truncateDescription(project.description)}</span>
+                <div className="track-content">
+                  <div className="track-info-row">
+                    <div className="track-info">
+                      <button className="play-btn" onClick={() => goToVideo(project.project_id)}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                      </button>
+                      <div className="track-text">
+                        <span className="track-author">{user ? user.username : "username"}</span>
+                        <span className="track-title">{project.title}</span>
+                        <span className="track-desc">{truncateDescription(project.description)}</span>
+                      </div>
+                    </div>
+
+                    <div className="track-actions">
+                      <button className="action-btn" title={project.visibility === "PRIVATE" ? "Privado" : "Publico"}>
+                        {project.visibility === "PRIVATE" ? (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        ) : (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        )}
+                      </button>
+                      <button className="action-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                      </button>
+                      <button className="action-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                      </button>
+                      {isOwnProfile && (
+                        <button
+                          className="action-btn text-danger"
+                          onClick={() => handleDeleteProject(project.project_id)}
+                          disabled={isDeletingProjectId === project.project_id}
+                          title={isDeletingProjectId === project.project_id ? "Eliminando..." : "Eliminar publicación"}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="track-actions">
-                    <button className="action-btn" title={project.visibility === "PRIVATE" ? "Privado" : "Publico"}>
-                      {project.visibility === "PRIVATE" ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                      )}
-                    </button>
-                    <button className="action-btn">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                    </button>
-                    <button className="action-btn">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                    </button>
-                    <button className="action-btn text-danger">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <div className="comment-box">
+                    <div className="comment-avatar">
+                      <img
+                        src={user?.profile_picture_url ? `http://localhost:3001${user.profile_picture_url}` : getImagePath("gatoportada.jpg")}
+                        alt={user?.username || "User"}
+                      />
+                    </div>
+                    <div className="comment-input-wrapper">
+                      <input type="text" placeholder="Escribe un comentario ..." className="comment-input" />
+                    </div>
+                    <button className="send-comment-btn">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                   </div>
-                </div>
-
-                <div className="comment-box">
-                  <div className="comment-avatar">
-                    <img src={getImagePath("gatoportada.jpg")} alt="User" />
-                  </div>
-                  <div className="comment-input-wrapper">
-                    <input type="text" placeholder="Escribe un comentario ..." className="comment-input" />
-                  </div>
-                  <button className="send-comment-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </main>
 

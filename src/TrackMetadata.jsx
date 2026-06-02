@@ -15,6 +15,7 @@ export default function TrackMetadata() {
   const [privacy, setPrivacy] = useState("public");
   const [isUploading, setIsUploading] = useState(false);
   const thumbnailInputRef = useRef(null);
+  const uploadInProgressRef = useRef(false);
 
   // Generos
   const [genres, setGenres] = useState([]);
@@ -89,6 +90,8 @@ export default function TrackMetadata() {
   };
 
   const handleFinish = async () => {
+    if (uploadInProgressRef.current) return;
+
     if (!archiveFile) {
       alert("No se ha seleccionado ningun archivo musical para subir.");
       navigate("/upload");
@@ -102,6 +105,7 @@ export default function TrackMetadata() {
     }
     const user = JSON.parse(userStr);
 
+    uploadInProgressRef.current = true;
     setIsUploading(true);
     const formData = new FormData();
     formData.append("archive", archiveFile);
@@ -136,6 +140,7 @@ export default function TrackMetadata() {
     } catch (error) {
       console.error("Error subiendo el archivo:", error);
       alert(`Hubo un error al subir tu archivo: ${error.message}`);
+      uploadInProgressRef.current = false;
       setIsUploading(false);
     }
   };
