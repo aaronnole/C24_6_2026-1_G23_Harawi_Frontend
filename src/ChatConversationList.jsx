@@ -7,6 +7,8 @@ export default function ChatConversationList({
 }) {
   const [isOpen, setIsOpen] = useState(true);
 
+  const getInitial = (name) => String(name || "U").trim().charAt(0).toUpperCase() || "U";
+
   return (
     <section className={`chat-sidebar ${isOpen ? "open" : "collapsed"}`}>
       <button className="chat-sidebar-toggle" onClick={() => setIsOpen((prev) => !prev)}>
@@ -36,10 +38,16 @@ export default function ChatConversationList({
                 onClick={() => onSelectConversation(chat.conversation_id)}
               >
                 <div className="chat-avatar">
-                  <img
-                    src={chat.other_profile_picture_url ? `http://localhost:3001${chat.other_profile_picture_url}` : ""}
-                    alt={chat.other_username}
-                  />
+                  {chat.other_profile_picture_url ? (
+                    <img
+                      src={`http://localhost:3001${chat.other_profile_picture_url}`}
+                      alt={chat.other_username}
+                    />
+                  ) : (
+                    <div className="chat-avatar-fallback" aria-hidden="true">
+                      {getInitial(chat.other_username)}
+                    </div>
+                  )}
                 </div>
                 <div className="chat-meta">
                   <span className="chat-username">{chat.other_username}</span>

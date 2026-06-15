@@ -18,6 +18,40 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [showConversation, setShowConversation] = useState(false);
 
+  const getInitial = (name) => String(name || "U").trim().charAt(0).toUpperCase() || "U";
+
+  const formatMessageTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return new Intl.DateTimeFormat("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  const formatLastActive = (value) => {
+    if (!value) return "Conversación activa";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Conversación activa";
+
+    const now = new Date();
+    const sameDay =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+
+    if (sameDay) {
+      return `Activo hoy a las ${formatMessageTime(value)}`;
+    }
+
+    return `Último mensaje ${new Intl.DateTimeFormat("es-CO", {
+      day: "2-digit",
+      month: "short",
+    }).format(date)} a las ${formatMessageTime(value)}`;
+  };
+
   useEffect(() => {
     if (!currentUser?.user_id) return;
 
@@ -107,47 +141,85 @@ export default function ChatPage() {
     <div className="chat-page">
       <Header />
       <main className="chat-layout">
-        <div className={`${showConversation ? "hide-mobile" : ""}`}>
-          <ChatConversationList
-            conversations={conversations}
-            activeConversationId={activeConversationId}
-            onSelectConversation={openConversation}
-          />
-        </div>
+        <div className={`chat-panel-shell ${showConversation ? "conversation-open" : ""}`}>
+          <div className={`chat-sidebar-shell ${showConversation ? "hide-mobile" : ""}`}>
+            <ChatConversationList
+              conversations={conversations}
+              activeConversationId={activeConversationId}
+              onSelectConversation={openConversation}
+            />
+          </div>
 
-        <section className={`chat-thread ${showConversation ? "" : "hide-mobile"}`}>
-          {activeConversation ? (
-            <>
-              <div className="chat-thread-header">
-                <button className="chat-back-btn" onClick={() => setShowConversation(false)}>
-                  Volver
-                </button>
-                <span>{activeConversation.other_username}</span>
-              </div>
-              <div className="chat-thread-body">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.message_id}
-                    className={`chat-bubble ${Number(msg.sender_id) === Number(currentUser?.user_id) ? "mine" : "theirs"}`}
-                  >
-                    {msg.content}
+          <section className={`chat-thread ${showConversation ? "" : "hide-mobile"}`}>
+            {activeConversation ? (
+              <>
+                <div className="chat-thread-header">
+                  <button className="chat-back-btn" onClick={() => setShowConversation(false)}>
+                    Volver
+                  </button>
+                  <div className="chat-thread-header-main">
+                    <div className="chat-thread-title-group">
+                      <div className="chat-thread-avatar">
+                        {activeConversation.other_profile_picture_url ? (
+                          <img
+                            src={`http://localhost:3001${activeConversation.other_profile_picture_url}`}
+                            alt={activeConversation.other_username}
+                          />
+                        ) : (
+                          <span>{getInitial(activeConversation.other_username)}</span>
+                        )}
+                      </div>
+                      <div className="chat-thread-title-copy">
+                        <span className="chat-thread-name">{activeConversation.other_username}</span>
+                        <span className="chat-thread-subtitle">
+                          {formatLastActive(activeConversation.last_message_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="chat-thread-header-meta">
+                      <span className="chat-thread-count">{messages.length} mensajes</span>
+                    </div>
                   </div>
-                ))}
+                </div>
+                <div className="chat-thread-body">
+                  {messages.length === 0 ? (
+                    <div className="chat-empty-state">
+                      <h3>Aún no hay mensajes</h3>
+                      <p>Escribe el primero para empezar la conversación.</p>
+                    </div>
+                  ) : (
+                    messages.map((msg) => {
+                      const isMine = Number(msg.sender_id) === Number(currentUser?.user_id);
+
+                      return (
+                        <div key={msg.message_id} className={`chat-bubble-row ${isMine ? "mine" : "theirs"}`}>
+                          <div className={`chat-bubble ${isMine ? "mine" : "theirs"}`}>{msg.content}</div>
+                          <div className="chat-bubble-time">{formatMessageTime(msg.created_at)}</div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="chat-thread-compose">
+                  <input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    placeholder="Escribe un mensaje..."
+                  />
+                  <button onClick={handleSendMessage}>Enviar</button>
+                </div>
+              </>
+            ) : (
+              <div className="chat-empty">
+                <div className="chat-empty-card">
+                  <h3>Selecciona un chat</h3>
+                  <p>Elige una conversación de la lista para empezar a escribir.</p>
+                </div>
               </div>
-              <div className="chat-thread-compose">
-                <input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                  placeholder="Escribe un mensaje..."
-                />
-                <button onClick={handleSendMessage}>Enviar</button>
-              </div>
-            </>
-          ) : (
-            <div className="chat-empty">Selecciona un chat para comenzar</div>
-          )}
-        </section>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );

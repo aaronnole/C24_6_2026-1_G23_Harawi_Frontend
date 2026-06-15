@@ -14,6 +14,38 @@ export default function MessagesWidget() {
 
   const savedUser = localStorage.getItem("user");
   const currentUser = useMemo(() => (savedUser ? JSON.parse(savedUser) : null), [savedUser]);
+  const getInitial = (name) => String(name || "U").trim().charAt(0).toUpperCase() || "U";
+  const formatTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return new Intl.DateTimeFormat("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  const formatRelativeDate = (value) => {
+    if (!value) return "Sin actividad reciente";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Sin actividad reciente";
+
+    const now = new Date();
+    const sameDay =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+
+    if (sameDay) {
+      return `Hoy a las ${formatTime(value)}`;
+    }
+
+    return new Intl.DateTimeFormat("es-CO", {
+      day: "2-digit",
+      month: "short",
+    }).format(date);
+  };
 
   useEffect(() => {
     if (!isOpen || !currentUser?.user_id) return;
@@ -93,14 +125,39 @@ export default function MessagesWidget() {
     setNewMessage("");
   };
 
+  const BackIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 12H5"></path>
+      <path d="M12 19l-7-7 7-7"></path>
+    </svg>
+  );
+
+  const ExpandIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 3H3v5"></path>
+      <path d="M16 3h5v5"></path>
+      <path d="M21 16v5h-5"></path>
+      <path d="M3 16v5h5"></path>
+      <path d="M8 8L3 3"></path>
+      <path d="M16 8l5-5"></path>
+      <path d="M16 16l5 5"></path>
+      <path d="M8 16l-5 5"></path>
+    </svg>
+  );
+
   return (
     <div className="messages-wrapper">
-      <button className="messages-btn" onClick={() => setIsOpen((prev) => !prev)}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          <span>Mensajes</span>
+      <button className="messages-btn" onClick={() => setIsOpen((prev) => !prev)} aria-expanded={isOpen}>
+        <div className="messages-btn-copy">
+          <span className="messages-btn-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </span>
+          <span>
+            <strong>Mensajes</strong>
+            <small>{conversations.length > 0 ? `${conversations.length} chats` : "Sin chats"}</small>
+          </span>
         </div>
-        <span style={{ display: "flex" }}>
+        <span className={`messages-btn-chevron ${isOpen ? "open" : ""}`} aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </span>
       </button>
@@ -108,7 +165,10 @@ export default function MessagesWidget() {
       {isOpen && (
         <div className="messages-popover">
           <div className="messages-popover-header">
-            <span>Chats</span>
+            <div>
+              <p className="messages-popover-eyebrow">Conversaciones</p>
+              <span className="messages-popover-title">Chats recientes</span>
+            </div>
             <button className="messages-popover-all" onClick={goToFullChat}>
               Ver todos
             </button>
@@ -124,14 +184,21 @@ export default function MessagesWidget() {
                     onClick={() => openConversation(chat.conversation_id)}
                   >
                     <div className="messages-popover-avatar">
-                      <img
-                        src={chat.other_profile_picture_url ? `http://localhost:3001${chat.other_profile_picture_url}` : ""}
-                        alt={chat.other_username}
-                      />
+                      {chat.other_profile_picture_url ? (
+                        <img
+                          src={`http://localhost:3001${chat.other_profile_picture_url}`}
+                          alt={chat.other_username}
+                        />
+                      ) : (
+                        <span aria-hidden="true">{getInitial(chat.other_username)}</span>
+                      )}
                     </div>
                     <div className="messages-popover-meta">
                       <span className="messages-popover-name">{chat.other_username}</span>
                       <span className="messages-popover-preview">{chat.last_message || "Sin mensajes"}</span>
+                      <span className="messages-popover-date">
+                        {formatRelativeDate(chat.last_message_at)}
+                      </span>
                     </div>
                   </button>
                 ))
@@ -141,18 +208,68 @@ export default function MessagesWidget() {
             </div>
           ) : (
             <div className="messages-popover-thread">
-              <button className="messages-popover-back" onClick={() => setActiveConversationId(null)}>
-                Volver a chats
-              </button>
+              <div className="messages-popover-thread-header">
+                <button
+                  className="messages-popover-icon-btn"
+                  onClick={() => setActiveConversationId(null)}
+                  aria-label="Volver a chats"
+                  title="Volver a chats"
+                >
+                  <BackIcon />
+                </button>
+                <button
+                  className="messages-popover-icon-btn secondary"
+                  onClick={goToFullChat}
+                  aria-label="Abrir chat completo"
+                  title="Abrir chat completo"
+                >
+                  <ExpandIcon />
+                </button>
+              </div>
+              {(() => {
+                const activeChat = conversations.find(
+                  (chat) => Number(chat.conversation_id) === Number(activeConversationId)
+                );
+
+                return (
+                  <div className="messages-popover-thread-profile">
+                    <div className="messages-popover-avatar large">
+                      {activeChat?.other_profile_picture_url ? (
+                        <img
+                          src={`http://localhost:3001${activeChat.other_profile_picture_url}`}
+                          alt={activeChat.other_username}
+                        />
+                      ) : (
+                        <span aria-hidden="true">{getInitial(activeChat?.other_username)}</span>
+                      )}
+                    </div>
+                    <div className="messages-popover-thread-copy">
+                      <strong>{activeChat?.other_username || "Conversación"}</strong>
+                      <span>{formatRelativeDate(activeChat?.last_message_at)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="messages-popover-thread-body">
                 {messages.map((msg) => (
                   <div
                     key={msg.message_id}
-                    className={`messages-popover-bubble ${Number(msg.sender_id) === Number(currentUser?.user_id) ? "mine" : "theirs"}`}
+                    className={`messages-popover-bubble-row ${Number(msg.sender_id) === Number(currentUser?.user_id) ? "mine" : "theirs"}`}
                   >
-                    {msg.content}
+                    <div
+                      className={`messages-popover-bubble ${Number(msg.sender_id) === Number(currentUser?.user_id) ? "mine" : "theirs"}`}
+                    >
+                      {msg.content}
+                    </div>
+                    <span className="messages-popover-time">{formatTime(msg.created_at)}</span>
                   </div>
                 ))}
+                {messages.length === 0 && (
+                  <div className="messages-popover-empty-thread">
+                    <strong>Aún no hay mensajes</strong>
+                    <span>Escribe algo para iniciar la conversación.</span>
+                  </div>
+                )}
               </div>
               <div className="messages-popover-compose">
                 <input
