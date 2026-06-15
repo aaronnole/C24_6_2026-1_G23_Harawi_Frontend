@@ -306,6 +306,35 @@
   white-space: pre-wrap;
 }
 
+.video-collaborators-block {
+  margin: 0 0 12px 0;
+}
+
+.video-collaborators-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #44514a;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.video-collaborators-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-collaborator-chip {
+  background: #dff0e5;
+  color: #1f6b46;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
 .video-tags-row {
   display: flex;
   flex-wrap: wrap;

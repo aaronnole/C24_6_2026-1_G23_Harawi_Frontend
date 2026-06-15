@@ -6,14 +6,21 @@ import "./TrackMetadata.css";
 export default function TrackMetadata() {
   const navigate = useNavigate();
   const location = useLocation();
+  const editProjectId = location.state?.editProjectId;
+  const isEditMode = Boolean(editProjectId);
   const [archiveFile, setArchiveFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [title, setTitle] = useState("");
   const [mainArtists, setMainArtists] = useState("");
+  const [collaboratorQuery, setCollaboratorQuery] = useState("");
+  const [collaboratorOptions, setCollaboratorOptions] = useState([]);
+  const [selectedCollaborators, setSelectedCollaborators] = useState([]);
+  const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState("public");
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const thumbnailInputRef = useRef(null);
   const uploadInProgressRef = useRef(false);
 
@@ -26,8 +33,11 @@ export default function TrackMetadata() {
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+
     // Cargar archivo desde Upload
-    if (location.state && location.state.archiveFile) {
+    if (!isEditMode && location.state && location.state.archiveFile) {
       setArchiveFile(location.state.archiveFile);
       const name = location.state.archiveFile.name.split(".").slice(0, -1).join(".");
       setTitle(name);
@@ -39,14 +49,113 @@ export default function TrackMetadata() {
       .then((data) => setGenres(data))
       .catch((err) => console.error("Error cargando generos:", err));
 
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
+    if (user) {
       setMainArtists(user?.username || "");
     }
-  }, [location]);
+
+    if (!isEditMode || !user?.user_id) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingMetadata(true);
+
+    fetch(`http://localhost:3001/api/projects/${editProjectId}/metadata?user_id=${user.user_id}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("No se pudo cargar la metadata del track.");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!isMounted) return;
+        setTitle(data?.title || "");
+        setDescription(data?.description || "");
+        setPrivacy(data?.visibility === "PRIVATE" ? "private" : "public");
+        setSelectedGenre(data?.genre_id ? String(data.genre_id) : "");
+        setTags(Array.isArray(data?.tags) ? data.tags : []);
+        setSelectedCollaborators(
+          Array.isArray(data?.collaborators)
+            ? data.collaborators
+                .filter((item) => item?.user_id)
+                .map((item) => ({
+                  user_id: item.user_id,
+                  username: item.username,
+                  status: item.status,
+                }))
+            : []
+        );
+        setThumbnailPreview(data?.thumbnail_url ? `http://localhost:3001${data.thumbnail_url}` : null);
+      })
+      .catch((error) => {
+        console.error("Error cargando metadata:", error);
+        alert(error.message || "No se pudo cargar la metadata del track.");
+        navigate("/profile");
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingMetadata(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [editProjectId, isEditMode, location.state, navigate]);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return undefined;
+
+    const user = JSON.parse(userStr);
+    const controller = new AbortController();
+    const normalizedQuery = collaboratorQuery.trim();
+
+    const timeoutId = setTimeout(async () => {
+      setIsLoadingCollaborators(true);
+      try {
+        const params = new URLSearchParams({
+          limit: "20",
+        });
+
+        if (normalizedQuery) {
+          params.append("search", normalizedQuery);
+        }
+
+        const response = await fetch(
+          `http://localhost:3001/api/users/${user.user_id}/followers?${params.toString()}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar tus seguidores.");
+        }
+
+        const data = await response.json();
+        const selectedIds = new Set(selectedCollaborators.map((item) => item.user_id));
+        setCollaboratorOptions(
+          Array.isArray(data) ? data.filter((item) => !selectedIds.has(item.user_id)) : []
+        );
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error cargando seguidores:", error);
+          setCollaboratorOptions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingCollaborators(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [collaboratorQuery, selectedCollaborators]);
 
   const handleThumbnailClick = () => {
+    if (isEditMode) return;
     thumbnailInputRef.current?.click();
   };
 
@@ -89,10 +198,28 @@ export default function TrackMetadata() {
     }
   };
 
+  const addCollaborator = (collaborator) => {
+    setSelectedCollaborators((current) => {
+      if (current.some((item) => item.user_id === collaborator.user_id)) {
+        return current;
+      }
+
+      return [...current, collaborator];
+    });
+    setCollaboratorQuery("");
+    setCollaboratorOptions([]);
+  };
+
+  const removeCollaborator = (collaboratorUserId) => {
+    setSelectedCollaborators((current) =>
+      current.filter((item) => item.user_id !== collaboratorUserId)
+    );
+  };
+
   const handleFinish = async () => {
     if (uploadInProgressRef.current) return;
 
-    if (!archiveFile) {
+    if (!isEditMode && !archiveFile) {
       alert("No se ha seleccionado ningun archivo musical para subir.");
       navigate("/upload");
       return;
@@ -104,24 +231,44 @@ export default function TrackMetadata() {
       return;
     }
     const user = JSON.parse(userStr);
+    const collaboratorIds = selectedCollaborators.map((item) => item.user_id);
 
     uploadInProgressRef.current = true;
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("archive", archiveFile);
-    if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
-    formData.append("user_id", user.user_id);
-    formData.append("archive_name", title || archiveFile.name);
-    formData.append("description", description);
-    formData.append("privacy", privacy);
-    if (selectedGenre) formData.append("genre_id", selectedGenre);
-    if (tags.length > 0) formData.append("tags", JSON.stringify(tags));
-
     try {
-      const response = await fetch("http://localhost:3001/api/musical-archives", {
-        method: "POST",
-        body: formData,
-      });
+      let response;
+
+      if (isEditMode) {
+        response = await fetch(`http://localhost:3001/api/projects/${editProjectId}/metadata`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user.user_id,
+            title,
+            description,
+            privacy,
+            genre_id: selectedGenre || null,
+            tags,
+            collaborators: collaboratorIds,
+          }),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("archive", archiveFile);
+        if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+        formData.append("user_id", user.user_id);
+        formData.append("archive_name", title || archiveFile.name);
+        formData.append("description", description);
+        formData.append("privacy", privacy);
+        if (selectedGenre) formData.append("genre_id", selectedGenre);
+        if (tags.length > 0) formData.append("tags", JSON.stringify(tags));
+        if (collaboratorIds.length > 0) formData.append("collaborators", JSON.stringify(collaboratorIds));
+
+        response = await fetch("http://localhost:3001/api/musical-archives", {
+          method: "POST",
+          body: formData,
+        });
+      }
 
       if (!response.ok) {
         let backendMessage = "Error al subir el archivo";
@@ -135,8 +282,8 @@ export default function TrackMetadata() {
         throw new Error(backendMessage);
       }
 
-      alert("Archivo subido exitosamente.");
-      navigate("/dashboard");
+      alert(isEditMode ? "Metadata actualizada exitosamente." : "Archivo subido exitosamente.");
+      navigate("/profile");
     } catch (error) {
       console.error("Error subiendo el archivo:", error);
       alert(`Hubo un error al subir tu archivo: ${error.message}`);
@@ -150,6 +297,9 @@ export default function TrackMetadata() {
       <Header />
 
       <main className="metadata-container">
+        {isLoadingMetadata ? (
+          <div className="selected-file-info">Cargando metadata del track...</div>
+        ) : null}
         <div className="metadata-columns">
           <div className="cover-upload-section">
             <div
@@ -173,7 +323,13 @@ export default function TrackMetadata() {
               accept="image/*"
               style={{ display: "none" }}
             />
-            {archiveFile && (
+            {isEditMode && (
+              <div className="selected-file-info">
+                <strong>Modo edicion:</strong><br />
+                Por ahora puedes editar metadata, etiquetas, privacidad y colaboradores.
+              </div>
+            )}
+            {!isEditMode && archiveFile && (
               <div className="selected-file-info">
                 <strong>Archivo seleccionado:</strong><br />
                 {archiveFile.name} ({(archiveFile.size / (1024 * 1024)).toFixed(2)} MB)
@@ -254,6 +410,59 @@ export default function TrackMetadata() {
               ></textarea>
             </div>
 
+            <div className="form-group">
+              <label>Colaboradores</label>
+              <div className="collaborator-picker">
+                <div className="selected-collaborators">
+                  {selectedCollaborators.map((collaborator) => (
+                    <span key={collaborator.user_id} className="tag-bubble collaborator-bubble">
+                      @{collaborator.username}
+                      <button
+                        type="button"
+                        className="tag-remove-btn"
+                        onClick={() => removeCollaborator(collaborator.user_id)}
+                        aria-label={`Eliminar colaborador ${collaborator.username}`}
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Busca entre tus seguidores"
+                  className="meta-input"
+                  value={collaboratorQuery}
+                  onChange={(e) => setCollaboratorQuery(e.target.value)}
+                />
+
+                {isLoadingCollaborators ? (
+                  <div className="collaborator-results collaborator-results-muted">
+                    Buscando seguidores...
+                  </div>
+                ) : collaboratorOptions.length > 0 ? (
+                  <div className="collaborator-results">
+                    {collaboratorOptions.map((collaborator) => (
+                      <button
+                        key={collaborator.user_id}
+                        type="button"
+                        className="collaborator-result-btn"
+                        onClick={() => addCollaborator(collaborator)}
+                      >
+                        <span>@{collaborator.username}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : collaboratorQuery.trim() ? (
+                  <div className="collaborator-results collaborator-results-muted">
+                    No se encontraron seguidores con ese nombre.
+                  </div>
+                ) : null}
+              </div>
+              <p className="tags-hint">Solo puedes agregar usuarios que ya te siguen. Al guardar, los colaboradores quedaran en estado pendiente.</p>
+            </div>
+
             <div className="privacy-section">
               <p className="privacy-label">Privacidad</p>
               <div className="privacy-options">
@@ -286,8 +495,8 @@ export default function TrackMetadata() {
           className="nav-arrow-btn"
           onClick={handleFinish}
           aria-label="Finalizar"
-          disabled={isUploading}
-          style={{ opacity: isUploading ? 0.5 : 1 }}
+          disabled={isUploading || isLoadingMetadata}
+          style={{ opacity: isUploading || isLoadingMetadata ? 0.5 : 1 }}
         >
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
         </button>

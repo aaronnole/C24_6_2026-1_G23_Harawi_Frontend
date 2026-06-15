@@ -442,6 +442,18 @@ export default function VideoDetail() {
               <p className="video-description-text">
                 {videoData?.description || "Sin descripcion"}
               </p>
+              {Array.isArray(videoData?.collaborators) && videoData.collaborators.length > 0 ? (
+                <div className="video-collaborators-block">
+                  <span className="video-collaborators-label">Colaboradores</span>
+                  <div className="video-collaborators-row">
+                    {videoData.collaborators.map((collaborator) => (
+                      <span key={collaborator.user_id || collaborator.username} className="video-collaborator-chip">
+                        @{collaborator.username}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className="video-tags-row">
                 {(videoData?.tags || []).map((tag) => (
                   <span key={tag} className="video-tag-chip">#{tag}</span>
