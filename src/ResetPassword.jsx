@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import "./Login.css";
 import studioImg from "./assets/login_image.jpg";
+import { buildApiUrl } from "./utils/api";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -30,7 +31,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3001/api/reset-password", {
+      const response = await fetch(buildApiUrl("/reset-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword }),

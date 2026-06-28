@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "./Header";
 import "./TrackMetadata.css";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
 export default function TrackMetadata() {
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ export default function TrackMetadata() {
     }
 
     // Cargar generos desde el backend
-    fetch("http://localhost:3001/api/genres")
+    fetch(buildApiUrl("/genres"))
       .then((res) => res.json())
       .then((data) => setGenres(data))
       .catch((err) => console.error("Error cargando generos:", err));
@@ -60,7 +62,7 @@ export default function TrackMetadata() {
     let isMounted = true;
     setIsLoadingMetadata(true);
 
-    fetch(`http://localhost:3001/api/projects/${editProjectId}/metadata?user_id=${user.user_id}`)
+    fetch(buildApiUrl(`/projects/${editProjectId}/metadata?user_id=${user.user_id}`))
       .then(async (res) => {
         if (!res.ok) {
           throw new Error("No se pudo cargar la metadata del track.");
@@ -85,7 +87,7 @@ export default function TrackMetadata() {
                 }))
             : []
         );
-        setThumbnailPreview(data?.thumbnail_url ? `http://localhost:3001${data.thumbnail_url}` : null);
+        setThumbnailPreview(data?.thumbnail_url ? resolveMediaUrl(data.thumbnail_url) : null);
       })
       .catch((error) => {
         console.error("Error cargando metadata:", error);
@@ -122,10 +124,9 @@ export default function TrackMetadata() {
           params.append("search", normalizedQuery);
         }
 
-        const response = await fetch(
-          `http://localhost:3001/api/users/${user.user_id}/followers?${params.toString()}`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(buildApiUrl(`/users/${user.user_id}/followers?${params.toString()}`), {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error("No se pudieron cargar tus seguidores.");
@@ -239,7 +240,7 @@ export default function TrackMetadata() {
       let response;
 
       if (isEditMode) {
-        response = await fetch(`http://localhost:3001/api/projects/${editProjectId}/metadata`, {
+        response = await fetch(buildApiUrl(`/projects/${editProjectId}/metadata`), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -264,7 +265,7 @@ export default function TrackMetadata() {
         if (tags.length > 0) formData.append("tags", JSON.stringify(tags));
         if (collaboratorIds.length > 0) formData.append("collaborators", JSON.stringify(collaboratorIds));
 
-        response = await fetch("http://localhost:3001/api/musical-archives", {
+        response = await fetch(buildApiUrl("/musical-archives"), {
           method: "POST",
           body: formData,
         });

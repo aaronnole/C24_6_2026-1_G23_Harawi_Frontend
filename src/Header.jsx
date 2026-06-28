@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Header.css";
 import UpgradeOverlay from "./UpgradeOverlay";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
 export default function Header({
   searchTerm: controlledSearchTerm,
@@ -50,7 +52,7 @@ export default function Header({
     const loadNotifications = async () => {
       setNotificationsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3001/api/notifications/${user.user_id}`);
+        const response = await fetch(buildApiUrl(`/notifications/${user.user_id}`));
         if (!response.ok) {
           throw new Error("No se pudieron cargar las notificaciones.");
         }
@@ -112,7 +114,7 @@ export default function Header({
 
     setNotificationActionId(notificationId);
     try {
-      const response = await fetch(`http://localhost:3001/api/notifications/${notificationId}/respond`, {
+      const response = await fetch(buildApiUrl(`/notifications/${notificationId}/respond`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -270,7 +272,7 @@ export default function Header({
           <div className="user-profile" onClick={goToProfile} style={{ cursor: 'pointer' }}>
             {user && user.profile_picture_url ? (
               <img 
-                src={`http://localhost:3001${user.profile_picture_url}`} 
+                src={resolveMediaUrl(user.profile_picture_url)} 
                 alt="Avatar" 
                 className="avatar" 
                 style={{ objectFit: 'cover' }}

@@ -3,6 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import Header from "./Header";
 import MessagesWidget from "./MessagesWidget";
 import "./SearchResults.css";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
 const imageAssets = import.meta.glob("./assets/*", { eager: true, import: "default" });
 const fallbackImage = imageAssets["./assets/gatoportada.jpg"] || "./assets/gatoportada.jpg";
@@ -39,7 +41,7 @@ function ArchiveCard({ archive }) {
       <article className="content-card">
         <div className="card-image-container">
           <img
-            src={archive.thumbnail_url ? `http://localhost:3001${archive.thumbnail_url}` : fallbackImage}
+            src={archive.thumbnail_url ? resolveMediaUrl(archive.thumbnail_url) : fallbackImage}
             alt={archive.title || getArchiveLabel(archive.archive_type)}
             className="card-image"
           />
@@ -79,10 +81,9 @@ export default function SearchResults() {
       setError("");
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/videos/search?q=${encodeURIComponent(query)}&limit=48`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(buildApiUrl(`/videos/search?q=${encodeURIComponent(query)}&limit=48`), {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error("No se pudo cargar la búsqueda");

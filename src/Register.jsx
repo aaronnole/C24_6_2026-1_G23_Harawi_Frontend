@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Register.css";
 import studioImg from "./assets/login_image.jpg"; // Usamos la misma imagen como base, puedes cambiarla luego
+import { buildApiUrl } from "./utils/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/register", {
+      const response = await fetch(buildApiUrl("/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

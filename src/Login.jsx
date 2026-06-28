@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import OnboardingModal from "./OnboardingModal";
 import LabelOnboardingModal from "./LabelOnboardingModal";
+import { buildApiUrl } from "./utils/api";
 
 export default function Login() {
   const [progress] = useState(36); // 1:23 de 3:21 ≈ 36%
@@ -28,7 +29,7 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:3001/api/login", {
+      const response = await fetch(buildApiUrl("/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -64,7 +65,7 @@ export default function Login() {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const response = await fetch("http://localhost:3001/api/google-login", {
+        const response = await fetch(buildApiUrl("/google-login"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

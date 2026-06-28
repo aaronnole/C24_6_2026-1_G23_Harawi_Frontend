@@ -5,6 +5,8 @@ import Header from "./Header";
 import MessagesWidget from "./MessagesWidget";
 import "./VideoDetail.css";
 import { canInteractWithUser } from "./utils/socialRules";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 import {
   fetchFollowStatus,
   fetchPublicUser,
@@ -49,7 +51,7 @@ export default function VideoDetail() {
   useEffect(() => {
     if (!id) return;
 
-    fetch(`http://localhost:3001/api/video-detail/${id}`)
+    fetch(buildApiUrl(`/video-detail/${id}`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando detalle de video");
         return res.json();
@@ -60,7 +62,7 @@ export default function VideoDetail() {
         setVideoData(null);
       });
 
-    fetch(`http://localhost:3001/api/projects/${id}/comments`)
+    fetch(buildApiUrl(`/projects/${id}/comments`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando comentarios");
         return res.json();
@@ -131,7 +133,7 @@ export default function VideoDetail() {
 
     const ws = WaveSurfer.create({
       container: waveformRef.current,
-      url: `http://localhost:3001${videoData.url_archive}`,
+      url: resolveMediaUrl(videoData.url_archive),
       waveColor: "#a8adb5",
       progressColor: "#1f2328",
       cursorColor: "#1f2328",
@@ -206,7 +208,7 @@ export default function VideoDetail() {
     setIsSubmittingComment(true);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${id}/comments`, {
+      const response = await fetch(buildApiUrl(`/projects/${id}/comments`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -226,7 +228,7 @@ export default function VideoDetail() {
 
       setNewComment("");
 
-      const commentsResponse = await fetch(`http://localhost:3001/api/projects/${id}/comments`);
+      const commentsResponse = await fetch(buildApiUrl(`/projects/${id}/comments`));
       if (commentsResponse.ok) {
         const latestComments = await commentsResponse.json();
         setComments(Array.isArray(latestComments) ? latestComments : []);
@@ -244,7 +246,7 @@ export default function VideoDetail() {
     if (!canInteractWithUser(currentUser.user_id, videoData.user_id)) return;
 
     try {
-      const response = await fetch("http://localhost:3001/api/chat/conversations", {
+      const response = await fetch(buildApiUrl("/chat/conversations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -316,7 +318,7 @@ export default function VideoDetail() {
               {videoData?.thumbnail_url ? (
                 <div
                   className="audio-cover-stage"
-                  style={{ backgroundImage: `url(http://localhost:3001${videoData.thumbnail_url})` }}
+                  style={{ backgroundImage: `url(${resolveMediaUrl(videoData.thumbnail_url)})` }}
                 >
                   <div className="audio-cover-backdrop" />
                   <div className="audio-center-overlay">
@@ -371,8 +373,8 @@ export default function VideoDetail() {
             </div>
           ) : (
             <>
-              <video controls poster={videoData?.thumbnail_url ? `http://localhost:3001${videoData.thumbnail_url}` : getImagePath("bateriaportada.png")} className="video-element">
-                {videoData?.url_archive && <source src={`http://localhost:3001${videoData.url_archive}`} />}
+              <video controls poster={videoData?.thumbnail_url ? resolveMediaUrl(videoData.thumbnail_url) : getImagePath("bateriaportada.png")} className="video-element">
+                {videoData?.url_archive && <source src={resolveMediaUrl(videoData.url_archive)} />}
               </video>
               <button className="mode-toggle-btn" onClick={() => setIsTheaterMode(!isTheaterMode)}>
                 {isTheaterMode ? "Modo normal" : "Modo cine"}
@@ -388,7 +390,7 @@ export default function VideoDetail() {
             <div className="video-author-row">
               <div className="author-info">
                 <img
-                  src={authorData?.profile_picture_url ? `http://localhost:3001${authorData.profile_picture_url}` : (videoData?.profile_picture_url ? `http://localhost:3001${videoData.profile_picture_url}` : getImagePath("gatoportada.jpg"))}
+                  src={authorData?.profile_picture_url ? resolveMediaUrl(authorData.profile_picture_url) : (videoData?.profile_picture_url ? resolveMediaUrl(videoData.profile_picture_url) : getImagePath("gatoportada.jpg"))}
                   alt="Avatar"
                   className="author-avatar"
                   style={{ cursor: "pointer" }}
@@ -487,7 +489,7 @@ export default function VideoDetail() {
                 {comments.map((comment) => (
                   <div key={comment.comment_id} className="comment-item">
                     <img
-                      src={comment.profile_picture_url ? `http://localhost:3001${comment.profile_picture_url}` : getImagePath("gatoportada.jpg")}
+                      src={comment.profile_picture_url ? resolveMediaUrl(comment.profile_picture_url) : getImagePath("gatoportada.jpg")}
                       alt="avatar"
                       className="comment-item-avatar"
                     />

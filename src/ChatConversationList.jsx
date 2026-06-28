@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
 export default function ChatConversationList({
   conversations,
@@ -40,7 +41,7 @@ export default function ChatConversationList({
                 <div className="chat-avatar">
                   {chat.other_profile_picture_url ? (
                     <img
-                      src={`http://localhost:3001${chat.other_profile_picture_url}`}
+                      src={resolveMediaUrl(chat.other_profile_picture_url)}
                       alt={chat.other_username}
                     />
                   ) : (

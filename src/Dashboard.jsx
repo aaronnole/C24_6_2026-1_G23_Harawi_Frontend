@@ -4,6 +4,8 @@ import "./Dashboard.css";
 import Header from "./Header";
 import UpgradeOverlay from "./UpgradeOverlay";
 import MessagesWidget from "./MessagesWidget";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
 const imageAssets = import.meta.glob("./assets/*", { eager: true, import: "default" });
 
@@ -83,7 +85,7 @@ function ArchiveCard({ archive }) {
       <article className="content-card">
         <div className="card-image-container">
           <img
-            src={archive.thumbnail_url ? `http://localhost:3001${archive.thumbnail_url}` : fallbackImage}
+            src={archive.thumbnail_url ? resolveMediaUrl(archive.thumbnail_url) : fallbackImage}
             alt={archive.title || getArchiveLabel(archive.archive_type)}
             className="card-image"
           />
@@ -179,8 +181,8 @@ export default function Dashboard() {
 
       try {
         const [recommendedResult, recentResult] = await Promise.allSettled([
-          fetch("http://localhost:3001/api/videos/recommended?limit=24"),
-          fetch("http://localhost:3001/api/videos/recent?limit=12"),
+          fetch(buildApiUrl("/videos/recommended?limit=24")),
+          fetch(buildApiUrl("/videos/recent?limit=12")),
         ]);
 
         const nextRecommended = [];

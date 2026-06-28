@@ -4,6 +4,8 @@ import Header from "./Header";
 import MessagesWidget from "./MessagesWidget";
 import "./Profile.css";
 import { canInteractWithUser, isSameUser } from "./utils/socialRules";
+import { buildApiUrl } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 import {
   fetchFollowers,
   fetchFollowing,
@@ -57,7 +59,7 @@ function FollowListModal({
                 onClick={() => onOpenProfile(item.user_id)}
               >
                 <img
-                  src={item.profile_picture_url ? `http://localhost:3001${item.profile_picture_url}` : imageAssets["./assets/gatoportada.jpg"]}
+                  src={item.profile_picture_url ? resolveMediaUrl(item.profile_picture_url) : imageAssets["./assets/gatoportada.jpg"]}
                   alt={item.username}
                   className="follow-user-avatar"
                 />
@@ -124,7 +126,7 @@ export default function Profile() {
     try {
       const [userData, projectsResponse] = await Promise.all([
         fetchPublicUser(targetUserId),
-        fetch(`http://localhost:3001/api/projects/user/${targetUserId}`),
+        fetch(buildApiUrl(`/projects/user/${targetUserId}`)),
       ]);
 
       setUser(userData);
@@ -251,7 +253,7 @@ export default function Profile() {
     if (!canInteractWithUser(currentUser.user_id, user.user_id)) return;
 
     try {
-      const response = await fetch("http://localhost:3001/api/chat/conversations", {
+      const response = await fetch(buildApiUrl("/chat/conversations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -281,7 +283,7 @@ export default function Profile() {
     setIsDeletingProjectId(projectId);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/projects/${projectId}`, {
+      const response = await fetch(buildApiUrl(`/projects/${projectId}`), {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: currentUser.user_id }),
@@ -340,7 +342,7 @@ export default function Profile() {
     formData.append("profile_picture", file);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${user.user_id}/profile-picture`, {
+      const response = await fetch(buildApiUrl(`/users/${user.user_id}/profile-picture`), {
         method: "POST",
         body: formData,
       });
@@ -396,7 +398,7 @@ export default function Profile() {
     formData.append("cover_picture", file);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${user.user_id}/cover-picture`, {
+      const response = await fetch(buildApiUrl(`/users/${user.user_id}/cover-picture`), {
         method: "POST",
         body: formData,
       });
@@ -442,7 +444,7 @@ export default function Profile() {
           >
             {user?.cover_picture_url ? (
               <img
-                src={`http://localhost:3001${user.cover_picture_url}`}
+                src={resolveMediaUrl(user.cover_picture_url)}
                 alt="Banner"
                 className={`banner-img ${isUploadingCover ? "uploading" : ""}`}
               />
@@ -476,7 +478,7 @@ export default function Profile() {
             >
               {user?.profile_picture_url ? (
                 <img
-                  src={`http://localhost:3001${user.profile_picture_url}`}
+                  src={resolveMediaUrl(user.profile_picture_url)}
                   alt="Profile"
                   className={`profile-picture ${isUploading ? "uploading" : ""}`}
                 />
@@ -562,7 +564,7 @@ export default function Profile() {
               <div key={project.project_id} className="track-item-container">
                 <div className="track-cover" onClick={() => goToVideo(project.project_id)} style={{ cursor: "pointer" }}>
                   <img
-                    src={project.thumbnail_url ? `http://localhost:3001${project.thumbnail_url}` : getImagePath("gatoportada.jpg")}
+                    src={project.thumbnail_url ? resolveMediaUrl(project.thumbnail_url) : getImagePath("gatoportada.jpg")}
                     alt="Cover"
                   />
                 </div>
@@ -615,7 +617,7 @@ export default function Profile() {
                   <div className="comment-box">
                     <div className="comment-avatar">
                       <img
-                        src={user?.profile_picture_url ? `http://localhost:3001${user.profile_picture_url}` : getImagePath("gatoportada.jpg")}
+                        src={user?.profile_picture_url ? resolveMediaUrl(user.profile_picture_url) : getImagePath("gatoportada.jpg")}
                         alt={user?.username || "User"}
                       />
                     </div>

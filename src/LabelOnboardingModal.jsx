@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './OnboardingModal.css';
+import { buildApiUrl } from "./utils/api";
 
 export default function LabelOnboardingModal({ user, onComplete }) {
   const [formData, setFormData] = useState({
@@ -16,7 +17,7 @@ export default function LabelOnboardingModal({ user, onComplete }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/record-label', {
+      const response = await fetch(buildApiUrl('/record-label'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

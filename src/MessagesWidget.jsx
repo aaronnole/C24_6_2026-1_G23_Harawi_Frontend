@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
+import { buildApiUrl, SOCKET_URL } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
-const socket = io("http://localhost:3001", { autoConnect: true });
+const socket = io(SOCKET_URL, { autoConnect: true });
 
 export default function MessagesWidget() {
   const navigate = useNavigate();
@@ -50,7 +52,7 @@ export default function MessagesWidget() {
   useEffect(() => {
     if (!isOpen || !currentUser?.user_id) return;
 
-    fetch(`http://localhost:3001/api/chat/conversations/${currentUser.user_id}`)
+    fetch(buildApiUrl(`/chat/conversations/${currentUser.user_id}`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando conversaciones");
         return res.json();
@@ -65,7 +67,7 @@ export default function MessagesWidget() {
   useEffect(() => {
     if (!activeConversationId) return;
 
-    fetch(`http://localhost:3001/api/chat/messages/${activeConversationId}`)
+    fetch(buildApiUrl(`/chat/messages/${activeConversationId}`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando mensajes");
         return res.json();
@@ -84,7 +86,7 @@ export default function MessagesWidget() {
       }
 
       if (currentUser?.user_id) {
-        fetch(`http://localhost:3001/api/chat/conversations/${currentUser.user_id}`)
+        fetch(buildApiUrl(`/chat/conversations/${currentUser.user_id}`))
           .then((res) => res.json())
           .then((data) => setConversations(Array.isArray(data) ? data : []))
           .catch(() => {});
@@ -186,7 +188,7 @@ export default function MessagesWidget() {
                     <div className="messages-popover-avatar">
                       {chat.other_profile_picture_url ? (
                         <img
-                          src={`http://localhost:3001${chat.other_profile_picture_url}`}
+                          src={resolveMediaUrl(chat.other_profile_picture_url)}
                           alt={chat.other_username}
                         />
                       ) : (
@@ -236,7 +238,7 @@ export default function MessagesWidget() {
                     <div className="messages-popover-avatar large">
                       {activeChat?.other_profile_picture_url ? (
                         <img
-                          src={`http://localhost:3001${activeChat.other_profile_picture_url}`}
+                          src={resolveMediaUrl(activeChat.other_profile_picture_url)}
                           alt={activeChat.other_username}
                         />
                       ) : (

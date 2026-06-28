@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './OnboardingModal.css';
+import { buildApiUrl } from "./utils/api";
 
 export default function OnboardingModal({ user, onComplete }) {
   const [formData, setFormData] = useState({
@@ -14,7 +15,7 @@ export default function OnboardingModal({ user, onComplete }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/update-profile', {
+      const response = await fetch(buildApiUrl('/update-profile'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

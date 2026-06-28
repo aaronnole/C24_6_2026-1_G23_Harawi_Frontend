@@ -4,8 +4,10 @@ import { io } from "socket.io-client";
 import Header from "./Header";
 import ChatConversationList from "./ChatConversationList";
 import "./ChatPage.css";
+import { buildApiUrl, SOCKET_URL } from "./utils/api";
+import { resolveMediaUrl } from "./utils/mediaUrl";
 
-const socket = io("http://localhost:3001", { autoConnect: true });
+const socket = io(SOCKET_URL, { autoConnect: true });
 
 export default function ChatPage() {
   const location = useLocation();
@@ -55,7 +57,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!currentUser?.user_id) return;
 
-    fetch(`http://localhost:3001/api/chat/conversations/${currentUser.user_id}`)
+    fetch(buildApiUrl(`/chat/conversations/${currentUser.user_id}`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando conversaciones");
         return res.json();
@@ -82,7 +84,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!activeConversationId) return;
 
-    fetch(`http://localhost:3001/api/chat/messages/${activeConversationId}`)
+    fetch(buildApiUrl(`/chat/messages/${activeConversationId}`))
       .then((res) => {
         if (!res.ok) throw new Error("Error cargando mensajes");
         return res.json();
@@ -100,7 +102,7 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, msg]);
       }
       if (currentUser?.user_id) {
-        fetch(`http://localhost:3001/api/chat/conversations/${currentUser.user_id}`)
+        fetch(buildApiUrl(`/chat/conversations/${currentUser.user_id}`))
           .then((res) => res.json())
           .then((data) => setConversations(Array.isArray(data) ? data : []))
           .catch(() => {});
@@ -162,7 +164,7 @@ export default function ChatPage() {
                       <div className="chat-thread-avatar">
                         {activeConversation.other_profile_picture_url ? (
                           <img
-                            src={`http://localhost:3001${activeConversation.other_profile_picture_url}`}
+                            src={resolveMediaUrl(activeConversation.other_profile_picture_url)}
                             alt={activeConversation.other_username}
                           />
                         ) : (
