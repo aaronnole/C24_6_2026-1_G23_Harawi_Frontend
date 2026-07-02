@@ -16,15 +16,6 @@ import {
 
 const imageAssets = import.meta.glob("./assets/*", { eager: true, import: "default" });
 
-const recommendations = [
-  { id: 1, title: "Titulo 1", user: "Usuario" },
-  { id: 2, title: "Titulo 2", user: "Usuario" },
-  { id: 3, title: "Titulo 3", user: "Usuario" },
-  { id: 4, title: "Titulo 4", user: "Usuario" },
-  { id: 5, title: "Titulo 5", user: "Usuario" },
-  { id: 6, title: "Titulo 6", user: "Usuario" },
-];
-
 export default function VideoDetail() {
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -41,6 +32,8 @@ export default function VideoDetail() {
     isLoaded: false,
   });
   const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
+  const [recommendedVideos, setRecommendedVideos] = useState([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const waveformRef = useRef(null);
   const waveSurferRef = useRef(null);
   const navigate = useNavigate();
@@ -72,6 +65,48 @@ export default function VideoDetail() {
         console.error("Error cargando comentarios:", err);
         setComments([]);
       });
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return undefined;
+
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      limit: "8",
+      type: "VIDEO",
+      exclude_project_id: id,
+    });
+
+    setIsLoadingRecommendations(true);
+
+    fetch(buildApiUrl(`/videos/recommended?${params.toString()}`), {
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error cargando recomendaciones");
+        return res.json();
+      })
+      .then((data) => {
+        const nextRecommendations = Array.isArray(data)
+          ? data.filter((item) => String(item.project_id) !== String(id))
+          : [];
+        setRecommendedVideos(nextRecommendations);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Error cargando recomendaciones:", err);
+          setRecommendedVideos([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoadingRecommendations(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [id]);
 
   useEffect(() => {
@@ -190,6 +225,11 @@ export default function VideoDetail() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const openRecommendedVideo = (projectId) => {
+    navigate(`/video/${projectId}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleAddComment = async () => {
@@ -504,16 +544,40 @@ export default function VideoDetail() {
           </div>
 
           <div className="video-recommendations-column">
-            {recommendations.map((r) => (
-              <div className="rec-card" key={r.id}>
+            <div className="video-ad-slot" aria-label="Espacio publicitario">
+              <span className="video-ad-label">Publicidad</span>
+              <span className="video-ad-text">Espacio publicitario</span>
+            </div>
+
+            <h3 className="recommendations-title">Videos recomendados</h3>
+
+            {isLoadingRecommendations ? (
+              <div className="recommendations-empty">Cargando recomendaciones...</div>
+            ) : recommendedVideos.length === 0 ? (
+              <div className="recommendations-empty">No hay videos recomendados por ahora.</div>
+            ) : recommendedVideos.map((recommendation) => (
+              <button
+                type="button"
+                className="rec-card"
+                key={recommendation.project_id}
+                onClick={() => openRecommendedVideo(recommendation.project_id)}
+              >
                 <div className="rec-thumbnail">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                  {recommendation.thumbnail_url ? (
+                    <img
+                      src={resolveMediaUrl(recommendation.thumbnail_url)}
+                      alt={recommendation.title || "Video recomendado"}
+                      className="rec-thumbnail-image"
+                    />
+                  ) : (
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                  )}
                 </div>
                 <div className="rec-info">
-                  <span className="rec-title">{r.title}</span>
-                  <span className="rec-user">{r.user}</span>
+                  <span className="rec-title">{recommendation.title || "Sin titulo"}</span>
+                  <span className="rec-user">{recommendation.username || "Usuario"}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

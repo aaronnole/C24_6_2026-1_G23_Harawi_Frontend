@@ -5,6 +5,75 @@ import "./TrackMetadata.css";
 import { buildApiUrl } from "./utils/api";
 import { resolveMediaUrl } from "./utils/mediaUrl";
 
+const createVideoThumbnail = (file) => (
+  new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const objectUrl = URL.createObjectURL(file);
+    let settled = false;
+
+    const cleanup = () => {
+      URL.revokeObjectURL(objectUrl);
+      video.removeAttribute("src");
+      video.load();
+    };
+
+    const finishWithError = (error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const captureFrame = () => {
+      if (settled) return;
+
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        finishWithError(new Error("No se pudo preparar la portada del video."));
+        return;
+      }
+
+      context.drawImage(video, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          finishWithError(new Error("No se pudo generar la portada del video."));
+          return;
+        }
+
+        settled = true;
+        cleanup();
+        const baseName = file.name.split(".").slice(0, -1).join(".") || "video";
+        resolve(new File([blob], `${baseName}-frame.jpg`, { type: "image/jpeg" }));
+      }, "image/jpeg", 0.86);
+    };
+
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.addEventListener("error", () => finishWithError(new Error("No se pudo leer el video para generar portada.")), { once: true });
+    video.addEventListener("loadedmetadata", () => {
+      const targetTime = Number.isFinite(video.duration) && video.duration > 1
+        ? Math.min(1, video.duration * 0.1)
+        : 0;
+
+      if (targetTime === 0) {
+        video.addEventListener("loadeddata", captureFrame, { once: true });
+        return;
+      }
+
+      video.currentTime = targetTime;
+    }, { once: true });
+    video.addEventListener("seeked", captureFrame, { once: true });
+    video.src = objectUrl;
+  })
+);
+
 export default function TrackMetadata() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,8 +92,11 @@ export default function TrackMetadata() {
   const [privacy, setPrivacy] = useState("public");
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
+  const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
   const thumbnailInputRef = useRef(null);
   const uploadInProgressRef = useRef(false);
+  const generatedThumbnailPreviewRef = useRef(null);
+  const thumbnailGenerationIdRef = useRef(0);
 
   // Generos
   const [genres, setGenres] = useState([]);
@@ -106,6 +178,51 @@ export default function TrackMetadata() {
   }, [editProjectId, isEditMode, location.state, navigate]);
 
   useEffect(() => {
+    if (isEditMode || !archiveFile || !archiveFile.type.startsWith("video/") || thumbnailFile) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    const generationId = thumbnailGenerationIdRef.current + 1;
+    thumbnailGenerationIdRef.current = generationId;
+    setIsGeneratingThumbnail(true);
+
+    createVideoThumbnail(archiveFile)
+      .then((file) => {
+        if (!isMounted || thumbnailGenerationIdRef.current !== generationId) return;
+
+        const previewUrl = URL.createObjectURL(file);
+        if (generatedThumbnailPreviewRef.current) {
+          URL.revokeObjectURL(generatedThumbnailPreviewRef.current);
+        }
+
+        generatedThumbnailPreviewRef.current = previewUrl;
+        setThumbnailFile(file);
+        setThumbnailPreview(previewUrl);
+      })
+      .catch((error) => {
+        if (isMounted) {
+          console.warn("No se pudo generar portada automatica del video:", error);
+        }
+      })
+      .finally(() => {
+        if (isMounted && thumbnailGenerationIdRef.current === generationId) {
+          setIsGeneratingThumbnail(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [archiveFile, isEditMode, thumbnailFile]);
+
+  useEffect(() => () => {
+    if (generatedThumbnailPreviewRef.current) {
+      URL.revokeObjectURL(generatedThumbnailPreviewRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (!userStr) return undefined;
 
@@ -163,6 +280,11 @@ export default function TrackMetadata() {
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
+      thumbnailGenerationIdRef.current += 1;
+      if (generatedThumbnailPreviewRef.current) {
+        URL.revokeObjectURL(generatedThumbnailPreviewRef.current);
+        generatedThumbnailPreviewRef.current = null;
+      }
       setThumbnailFile(file);
       setThumbnailPreview(URL.createObjectURL(file));
     } else {
@@ -334,6 +456,12 @@ export default function TrackMetadata() {
               <div className="selected-file-info">
                 <strong>Archivo seleccionado:</strong><br />
                 {archiveFile.name} ({(archiveFile.size / (1024 * 1024)).toFixed(2)} MB)
+                {isGeneratingThumbnail && archiveFile.type.startsWith("video/") ? (
+                  <>
+                    <br />
+                    Generando portada automatica...
+                  </>
+                ) : null}
               </div>
             )}
           </div>

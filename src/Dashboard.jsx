@@ -9,11 +9,6 @@ import { resolveMediaUrl } from "./utils/mediaUrl";
 
 const imageAssets = import.meta.glob("./assets/*", { eager: true, import: "default" });
 
-const banners = [
-  "./assets/banner1mcdonalds.png",
-  "./assets/banner2.jpg",
-];
-
 const fallbackImage = imageAssets["./assets/gatoportada.jpg"] || "./assets/gatoportada.jpg";
 const TOUR_KEY = "harawi_dashboard_tour_seen";
 
@@ -150,7 +145,6 @@ function TourTips({ onClose }) {
 
 export default function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [currentBanner, setCurrentBanner] = useState(0);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [recentVideos, setRecentVideos] = useState([]);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -159,13 +153,6 @@ export default function Dashboard() {
   const [archiveTypeFilter, setArchiveTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("featured");
   const [showTour, setShowTour] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem(TOUR_KEY) === "true";
@@ -377,24 +364,24 @@ export default function Dashboard() {
       {showTour && <TourTips onClose={closeTour} />}
 
       <main className="dashboard-main">
-        <section className="carousel-container">
-          {banners.map((banner, index) => (
-            <div
-              key={index}
-              className={`carousel-slide ${index === currentBanner ? "active" : ""}`}
-              style={{ backgroundImage: `url(${imageAssets[banner] || banner})` }}
+        <section className="dashboard-ad-slot" aria-label="Espacio publicitario">
+          <div className="dashboard-ad-copy">
+            <span className="dashboard-ad-label">Publicidad</span>
+            <h2 className="dashboard-ad-title">Destaca tu proyecto en Harawi</h2>
+            <p className="dashboard-ad-text">
+              Espacio reservado para publicidad de Google AdSense, pensado para mostrar anuncios relevantes al público.
+            </p>
+            <button type="button" className="dashboard-ad-cta" onClick={() => setShowUpgradeModal(true)}>
+              Ver opciones
+            </button>
+          </div>
+          <div className="dashboard-ad-visual" aria-hidden="true">
+            <div className="dashboard-ad-gradient" />
+            <img
+              src={imageAssets["./assets/banner2.jpg"] || fallbackImage}
+              alt=""
+              className="dashboard-ad-image"
             />
-          ))}
-          <div className="carousel-indicators">
-            {banners.map((_, index) => (
-              <button
-                key={index}
-                className={`indicator ${index === currentBanner ? "active" : ""}`}
-                onClick={() => setCurrentBanner(index)}
-                aria-label={`Ir a la imagen ${index + 1}`}
-                title="Cambiar banner"
-              />
-            ))}
           </div>
         </section>
 
