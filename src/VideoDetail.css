@@ -549,6 +549,14 @@
   min-width: 0;
 }
 
+.rec-type {
+  color: #777;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .rec-title {
   font-weight: 600;
   font-size: 1rem;

@@ -16,6 +16,8 @@ import {
 
 const imageAssets = import.meta.glob("./assets/*", { eager: true, import: "default" });
 
+const getArchiveLabel = (archiveType) => (archiveType === "AUDIO" ? "Audio" : "Video");
+
 export default function VideoDetail() {
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -73,7 +75,6 @@ export default function VideoDetail() {
     const controller = new AbortController();
     const params = new URLSearchParams({
       limit: "8",
-      type: "VIDEO",
       exclude_project_id: id,
     });
 
@@ -549,12 +550,12 @@ export default function VideoDetail() {
               <span className="video-ad-text">Espacio publicitario</span>
             </div>
 
-            <h3 className="recommendations-title">Videos recomendados</h3>
+            <h3 className="recommendations-title">Recomendados</h3>
 
             {isLoadingRecommendations ? (
               <div className="recommendations-empty">Cargando recomendaciones...</div>
             ) : recommendedVideos.length === 0 ? (
-              <div className="recommendations-empty">No hay videos recomendados por ahora.</div>
+              <div className="recommendations-empty">No hay recomendaciones por ahora.</div>
             ) : recommendedVideos.map((recommendation) => (
               <button
                 type="button"
@@ -566,7 +567,7 @@ export default function VideoDetail() {
                   {recommendation.thumbnail_url ? (
                     <img
                       src={resolveMediaUrl(recommendation.thumbnail_url)}
-                      alt={recommendation.title || "Video recomendado"}
+                      alt={recommendation.title || getArchiveLabel(recommendation.archive_type)}
                       className="rec-thumbnail-image"
                     />
                   ) : (
@@ -574,6 +575,7 @@ export default function VideoDetail() {
                   )}
                 </div>
                 <div className="rec-info">
+                  <span className="rec-type">{getArchiveLabel(recommendation.archive_type)}</span>
                   <span className="rec-title">{recommendation.title || "Sin titulo"}</span>
                   <span className="rec-user">{recommendation.username || "Usuario"}</span>
                 </div>
