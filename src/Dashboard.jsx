@@ -371,9 +371,6 @@ export default function Dashboard() {
             <p className="dashboard-ad-text">
               Espacio reservado para publicidad de Google AdSense, pensado para mostrar anuncios relevantes al público.
             </p>
-            <button type="button" className="dashboard-ad-cta" onClick={() => setShowUpgradeModal(true)}>
-              Ver opciones
-            </button>
           </div>
           <div className="dashboard-ad-visual" aria-hidden="true">
             <div className="dashboard-ad-gradient" />

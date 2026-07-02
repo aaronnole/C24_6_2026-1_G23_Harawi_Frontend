@@ -277,6 +277,10 @@ export default function Login() {
           onComplete={handleLabelOnboardingComplete} 
         />
       )}
+
+      <div className="auth-legal-link">
+        <Link to="/terms">Términos y condiciones</Link>
+      </div>
     </div>
   );
 }

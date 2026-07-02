@@ -11,6 +11,7 @@ import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import ChatPage from "./ChatPage";
 import SearchResults from "./SearchResults";
+import Terms from "./Terms";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/upload/metadata" element={<TrackMetadata />} />
         <Route path="/messages" element={<ChatPage />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>

@@ -169,6 +169,10 @@ export default function Register() {
 
       {/* Barra decorativa inferior */}
       <div className="bottom-bar" />
+
+      <div className="auth-legal-link">
+        <Link to="/terms">Términos y condiciones</Link>
+      </div>
     </div>
   );
 }

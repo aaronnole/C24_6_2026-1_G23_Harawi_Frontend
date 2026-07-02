@@ -12,6 +12,26 @@
   overflow: hidden;
 }
 
+.auth-legal-link {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 0.84rem;
+}
+
+.auth-legal-link a {
+  color: #666;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.auth-legal-link a:hover {
+  color: #111;
+  border-bottom-color: #111;
+}
+
 /* ===========================
    Panel izquierdo
    =========================== */
